@@ -1,7 +1,7 @@
 
 """.
 """
-from prettyprint import pp
+import random
 
 from pycparser import c_parser, c_ast
 """.
@@ -482,6 +482,47 @@ class Analysis(object):
         return self.compress()
 
 
+def make_transfer_path(start, item, use_space=False):
+    """.
+    """
+    dot_str = ""
+    if not isinstance(item, list):
+        dot_str += '%s -> %s;\n' % (start, item)
+
+    else:
+        label = " ".join(item[1]).replace("\"", "\\\"")
+        if item[0] == "false":
+            label = "not | " + label
+
+        if isinstance(item[2][0], list):
+            end = str(random.random())
+            dot_str += '%s -> %s [label = "%s"];\n' % (start, end, label)
+            dot_str += '%s [label = " "];\n' % end
+            for i in item[2]:
+                dot_str += make_transfer_path(end, i, True)
+
+        else:
+            dot_str += '%s -> %s [label = "%s"];\n' % (start,\
+                                                       item[2][0], label)
+
+        if use_space:
+            dot_str += '%s [label = " "];\n' % start
+
+    return dot_str
+
+
+def make_dot_graph(graph):
+    """.
+    """
+    dot_str = "digraph HTMLTokenizer {\n"
+    for (name, transfer) in graph.items():
+        for item in transfer:
+            dot_str += make_transfer_path(name, item, False)
+    dot_str += "}\n"
+
+    return dot_str
+
 if __name__ == "__main__":
-    pp(process())
-    #item = trees["TagOpenState"].block_items[0]
+    x = make_dot_graph(process())
+    with open("x.dot", "w+") as f:
+        f.write(x)
