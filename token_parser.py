@@ -1,6 +1,8 @@
 
 """.
 """
+from prettyprint import pp
+
 from pycparser import c_parser, c_ast
 """.
 """
@@ -48,6 +50,7 @@ def process_chunks(chunks):
         transfer[name] = analysis(name, syntax_tree)
 
     return transfer
+
 
 def analysis(name, tree):
     """.
@@ -438,12 +441,47 @@ class Analysis(object):
         return c_method(expr)
 
 
+    def __compress(self, transfer):
+        """ transfer ->
+                [type, cond, [transfer, ...]]
+                "xxx"
+
+            return ->
+                [transfer, ...]
+        """
+        result = []
+
+        if not isinstance(transfer[1], list):
+            result.append(transfer)
+
+        elif transfer[0] == "full":
+            for i in transfer[2]:
+                result += self.__compress(i)
+
+        elif transfer[0] in ["true", "false"]:
+            compress_list = []
+            for i in transfer[2]:
+                compress_list += self.__compress(i)
+
+            transfer[2] = compress_list
+            result = [transfer]
+
+        return result
+
+
+    def compress(self):
+        """.
+        """
+        transfer = self.transfer["transfer"]
+
+        return self.__compress(transfer)
+
     def result(self):
         """.
         """
-        return self.transfer
+        return self.compress()
 
 
 if __name__ == "__main__":
-    print process()
+    pp(process())
     #item = trees["TagOpenState"].block_items[0]
